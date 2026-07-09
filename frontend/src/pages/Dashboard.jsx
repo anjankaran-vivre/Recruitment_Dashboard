@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { fetchRequisitions, fetchApplications } from '../services/api'
 import DateRangePicker from '../components/DateRangePicker'
 import { createPortal } from 'react-dom'
@@ -79,9 +79,14 @@ export default function Dashboard() {
   const [search, setSearch] = useState('')
   const [candDateFrom, setCandDateFrom] = useState('')
   const [candDateTo, setCandDateTo] = useState('')
-  const [summDateFrom, setSummDateFrom] = useState('')
-  const [summDateTo, setSummDateTo] = useState('')
+  const [summDateFrom, setSummDateFrom] = useState(() => {
+    const d = new Date(); return d.toISOString().slice(0, 10)
+  })
+  const [summDateTo, setSummDateTo] = useState(() => {
+    const d = new Date(); return d.toISOString().slice(0, 10)
+  })
   const [modalApp, setModalApp] = useState(null)
+  const autoInitDone = useRef(false)
 
   useEffect(() => {
     async function load() {
@@ -134,6 +139,24 @@ export default function Dashboard() {
         return { ...a, Department: dept }
       })
   }, [applications, jobIdToDept, titleToDept])
+
+  useEffect(() => {
+    if (autoInitDone.current || enriched.length === 0) return
+    autoInitDone.current = true
+    const today = new Date()
+    const todayStr = today.toISOString().slice(0, 10)
+    const hasToday = enriched.some(a => {
+      const d = a.Application_Created_Time || a.CreatedAt
+      return d && d.slice(0, 10) === todayStr
+    })
+    if (!hasToday) {
+      const yesterday = new Date(today)
+      yesterday.setDate(yesterday.getDate() - 1)
+      const ys = yesterday.toISOString().slice(0, 10)
+      setSummDateFrom(ys)
+      setSummDateTo(ys)
+    }
+  }, [enriched])
 
   const searched = useMemo(() => {
     if (!search) return enriched
@@ -297,13 +320,21 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="pipeline-panel pipeline-panel-summary">
-          <div className="pipeline-panel-head">
-            <div />
-            <div className="pipeline-panel-head-center">
-              <h3>Recruiter Summary</h3>
-              <span className="pipeline-panel-count">{grandTotal} total</span>
-            </div>
+          <div className="pipeline-panel pipeline-panel-summary">
+            <div className="pipeline-panel-head">
+              <div className="pipeline-panel-head-left">
+                <span className="pipeline-summary-date">{(() => {
+                  const today = new Date().toISOString().slice(0, 10)
+                  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+                  if (summDateFrom === today && summDateTo === today) return 'Today'
+                  if (summDateFrom === yesterday && summDateTo === yesterday) return 'Yesterday'
+                  return `${summDateFrom || '…'} — ${summDateTo || '…'}`
+                })()}</span>
+              </div>
+              <div className="pipeline-panel-head-center">
+                <h3>Recruiter Summary</h3>
+                <span className="pipeline-panel-count">{grandTotal} total</span>
+              </div>
             <DateRangePicker dateFrom={summDateFrom} dateTo={summDateTo} setDateFrom={setSummDateFrom} setDateTo={setSummDateTo} />
           </div>
           <div className="pipeline-panel-scroll">
@@ -312,6 +343,7 @@ export default function Dashboard() {
                   <tr>
                     <th>Recruiter</th>
                     <th>CV Sourcing</th>
+                    <th>Follow up</th>
                     <th>Tellecalling Done</th>
                     <th>Manager Round Schedule</th>
                     <th>Offer Accepted</th>
@@ -324,6 +356,7 @@ export default function Dashboard() {
                   <tr key={i}>
                     <td className="cell-recruiter">{g.recruiter}</td>
                     <td className="cell-total">{g.total}</td>
+                    <td className={`cell-status-count${(g.byStatus['follow up'] || 0) > 0 ? ' has-count' : ''}`}>{g.byStatus['follow up'] || 0}</td>
                     <td className={`cell-status-count${(g.byStatus['tele calling screening completed'] || 0) > 0 ? ' has-count' : ''}`}>{g.byStatus['tele calling screening completed'] || 0}</td>
                     <td className={`cell-status-count${(g.byStatus['manager round scheduled'] || 0) > 0 ? ' has-count' : ''}`}>{g.byStatus['manager round scheduled'] || 0}</td>
                     <td className={`cell-status-count${(g.byStatus['offer accepted'] || 0) > 0 ? ' has-count' : ''}`}>{g.byStatus['offer accepted'] || 0}</td>
