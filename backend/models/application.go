@@ -18,7 +18,14 @@ type Application struct {
 	RecruiterName        *string  `json:"Recruiter_Name" db:"Recruiter_Name"`
 	Source               *string  `json:"Source" db:"Source"`
 	ProfileSummary       *string  `json:"Profile_Summary" db:"Profile_Summary"`
-	TellecallingFeedback *string  `json:"Tellecalling_Feedback" db:"Tellecalling_Feedback"`
-	CreatedAt            time.Time `json:"CreatedAt" db:"CreatedAt"`
-	UpdatedAt            time.Time `json:"UpdatedAt" db:"UpdatedAt"`
+	TellecallingFeedback        *string `json:"Tellecalling_Feedback" db:"Tellecalling_Feedback"`
+	TelleCallingTime            *string `json:"TelleCalling_Time" db:"TelleCalling_Time"`
+	TellecallingStatus          *string `json:"Tellecalling_Status" db:"Tellecalling_Status"`
+	TelecallingCompletedDateTime *string `json:"Telecalling_Completed_DateTIme" db:"Telecalling_Completed_DateTIme"`
+	ManagerInterviewDateTime    *string `json:"Manager_Interview_DateTime" db:"Manager_Interview_DateTime"`
+	ManagerRoundScheduleDateTime *string `json:"Manager_Round_Schedule_DateTime" db:"Manager_Round_Schedule_DateTime"`
+	ManagerRoundCompletedTime   *string  `json:"Manager_Round_Completed_Time" db:"Manager_Round_Completed_Time"`
+	CallDuration                *float64 `json:"Call_Duration" db:"Call_Duration"`
+	CreatedAt                   time.Time `json:"CreatedAt" db:"CreatedAt"`
+	UpdatedAt                   time.Time `json:"UpdatedAt" db:"UpdatedAt"`
 }

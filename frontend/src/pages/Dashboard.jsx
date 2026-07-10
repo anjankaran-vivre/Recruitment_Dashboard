@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { fetchRequisitions, fetchApplications } from '../services/api'
+import { useData } from '../context/DataContext'
 import DateRangePicker from '../components/DateRangePicker'
 import { createPortal } from 'react-dom'
+import { fetchActiveRecruiters } from '../services/api'
 
 const MILESTONES = [
   { key: 'associated', label: 'Associated' },
@@ -15,9 +16,10 @@ function getMilestoneIdx(status) {
   const s = (status || '').toLowerCase().replace(/\s+/g, '')
   if (['associated', 'new'].includes(s)) return 0
   if (['followup', 'follow-up', 'follow_up'].includes(s)) return -2
-  if (['telecalling', 'screening', 'telecallingcompleted'].includes(s)) return 1
+  if (['telecalling', 'screening', 'telecallingcompleted', 'telecallingscreeningcompleted', 'approved'].includes(s)) return 1
   if (['futurehireable', 'future-hireable', 'future_hireable'].includes(s)) return -3
   if (['round2', '2ndround', '2ndroundcompleted', 'inprogress'].includes(s)) return 2
+  if (['managerroundscheduled', 'managerroundschedule'].includes(s)) return -4
   if (['manager', 'managerround', 'managerroundcompleted'].includes(s)) return 3
   if (['hired', 'offered', 'joined'].includes(s)) return 4
   return -1
@@ -29,17 +31,22 @@ function MilestoneBar({ status }) {
   const isJoined = (status || '').toLowerCase() === 'joined'
   const isFollowUp = idx === -2
   const isFutureHireable = idx === -3
+  const isManagerScheduled = idx === -4
 
   function dotClass(i) {
     const classes = ['ms-dot']
     const filled = idx >= 0 && i <= idx
     if (filled && !isRej) classes.push('ms-filled')
-    if (i === idx && !isRej && !isFollowUp && !isFutureHireable) classes.push('ms-active')
+    if (i === idx && !isRej && !isFollowUp && !isFutureHireable && !isManagerScheduled) classes.push('ms-active')
     if (isRej && i === 0) classes.push('ms-filled')
     if (isRej && i === MILESTONES.length - 1) classes.push('ms-rejected')
     if (isJoined && i === MILESTONES.length - 1) classes.push('ms-joined')
     if (isFollowUp && i === 0) classes.push('ms-filled')
     if (isFutureHireable && i <= 1) classes.push('ms-filled')
+    if (isFutureHireable && i === MILESTONES.length - 1) classes.push('ms-future-hireable-dot')
+    // Manager Round Scheduled: dots 0+1 filled blue, dot 2 = yellow in-progress
+    if (isManagerScheduled && i <= 1) classes.push('ms-filled')
+    if (isManagerScheduled && i === 2) classes.push('ms-manager-scheduled')
     return classes.join(' ')
   }
 
@@ -49,6 +56,7 @@ function MilestoneBar({ status }) {
     if (isFollowUp && i === 0) classes.push('ms-filled')
     if (isFutureHireable && i === 0) classes.push('ms-filled')
     if (isFutureHireable && i === 1) classes.push('ms-future-hireable')
+    if (isManagerScheduled && i <= 1) classes.push('ms-filled')
     if (idx >= 0 && i < idx) classes.push('ms-filled')
     return classes.join(' ')
   }
@@ -62,8 +70,8 @@ function MilestoneBar({ status }) {
           {i < MILESTONES.length - 1 && (
             <div className="ms-line-wrap">
               <div className={lineClass(i)} />
-              {isFollowUp && i === 0 && <span className="ms-label-between">Follow Up</span>}
-              {isFutureHireable && i === 1 && <span className="ms-label-between ms-label-future">Future Hireable</span>}
+
+
             </div>
           )}
         </div>
@@ -73,9 +81,12 @@ function MilestoneBar({ status }) {
 }
 
 export default function Dashboard() {
-  const [applications, setApplications] = useState([])
-  const [requisitions, setRequisitions] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { applications, requisitions, loading } = useData()
+  const [pageReady, setPageReady] = useState(false)
+
+  useEffect(() => {
+    requestAnimationFrame(() => setPageReady(true))
+  }, [])
   const [search, setSearch] = useState('')
   const [candDateFrom, setCandDateFrom] = useState('')
   const [candDateTo, setCandDateTo] = useState('')
@@ -86,24 +97,13 @@ export default function Dashboard() {
     const d = new Date(); return d.toISOString().slice(0, 10)
   })
   const [modalApp, setModalApp] = useState(null)
+  const [activeRecruiters, setActiveRecruiters] = useState([])
   const autoInitDone = useRef(false)
 
   useEffect(() => {
-    async function load() {
-      try {
-        const [apps, reqs] = await Promise.all([
-          fetchApplications(),
-          fetchRequisitions()
-        ])
-        setApplications(apps)
-        setRequisitions(reqs)
-      } catch (err) {
-        console.error('Failed to load data:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
+    fetchActiveRecruiters()
+      .then(data => setActiveRecruiters(data || []))
+      .catch(() => {})
   }, [])
 
   const jobIdToDept = useMemo(() => {
@@ -229,12 +229,14 @@ export default function Dashboard() {
       groups[name].byStatus[status] = (groups[name].byStatus[status] || 0) + 1
     }
     return Object.values(groups).sort((a, b) => b.total - a.total)
-      .filter(g => ['Poushali Das', 'Banashree Roy', 'Priya Saha', 'Meghna Deb Sarkar'].includes(g.recruiter))
-  }, [summFiltered])
+      .filter(g => activeRecruiters.some(r => r.recruiter_name === g.recruiter))
+  }, [summFiltered, activeRecruiters])
 
   const grandTotal = useMemo(() => {
     return recruiterSummary.reduce((sum, g) => sum + g.total, 0)
   }, [recruiterSummary])
+
+
 
   const tableJsx = useMemo(() => {
     return candFiltered.length > 0 ? (
@@ -242,9 +244,8 @@ export default function Dashboard() {
         <thead>
           <tr>
             <th className="th-cand">Candidate</th>
-            <th>Timeline</th>
+            <th className="th-status-timeline">Status / Timeline</th>
             <th>Recruiter</th>
-            <th className="th-status">Status</th>
             <th>CV Link</th>
             <th className="th-profile">Profile Summary</th>
             <th className="th-posting">Posting Title</th>
@@ -258,13 +259,13 @@ export default function Dashboard() {
                 <span className="cell-name">{a.Candidate_Name || '—'}</span>
                 {a.Mobile && <span className="cell-mobile">{a.Mobile}</span>}
               </td>
-              <td><MilestoneBar status={a.Application_Status} /></td>
-              <td className="cell-recruiter">{a.Recruiter_Name || '—'}</td>
-              <td className="cell-status">
+              <td className="cell-status-timeline">
                 <span className={`status-badge status-${(a.Application_Status || 'new').toLowerCase().replace(/\s+/g, '-')}`}>
                   {a.Application_Status || 'New'}
                 </span>
+                <MilestoneBar status={a.Application_Status} />
               </td>
+              <td className="cell-recruiter">{a.Recruiter_Name || '—'}</td>
               <td>
                 {a.CV_Link ? (
                   <a href={a.CV_Link} target="_blank" rel="noopener noreferrer" className="cv-link">View CV</a>
@@ -289,7 +290,7 @@ export default function Dashboard() {
     )
   }, [candFiltered])
 
-  if (loading) {
+  if (loading || !pageReady) {
     return <div className="loading"><div className="spinner" /> Loading dashboard...</div>
   }
 
@@ -320,7 +321,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-          <div className="pipeline-panel pipeline-panel-summary">
+        <div className="pipeline-panel pipeline-panel-summary">
             <div className="pipeline-panel-head">
               <div className="pipeline-panel-head-left">
                 <span className="pipeline-summary-date">{(() => {
@@ -335,7 +336,7 @@ export default function Dashboard() {
                 <h3>Recruiter Summary</h3>
                 <span className="pipeline-panel-count">{grandTotal} total</span>
               </div>
-            <DateRangePicker dateFrom={summDateFrom} dateTo={summDateTo} setDateFrom={setSummDateFrom} setDateTo={setSummDateTo} />
+            <DateRangePicker align="up" dateFrom={summDateFrom} dateTo={summDateTo} setDateFrom={setSummDateFrom} setDateTo={setSummDateTo} />
           </div>
           <div className="pipeline-panel-scroll">
             <table className="pipeline-table">
@@ -348,7 +349,6 @@ export default function Dashboard() {
                     <th>Manager Round Schedule</th>
                     <th>Offer Accepted</th>
                     <th>Awaiting Joining</th>
-                    <th>Conversion</th>
                   </tr>
               </thead>
               <tbody>
@@ -361,7 +361,6 @@ export default function Dashboard() {
                     <td className={`cell-status-count${(g.byStatus['manager round scheduled'] || 0) > 0 ? ' has-count' : ''}`}>{g.byStatus['manager round scheduled'] || 0}</td>
                     <td className={`cell-status-count${(g.byStatus['offer accepted'] || 0) > 0 ? ' has-count' : ''}`}>{g.byStatus['offer accepted'] || 0}</td>
                     <td className={`cell-status-count${(g.byStatus['hired'] || 0) > 0 ? ' has-count' : ''}`}>{g.byStatus['hired'] || 0}</td>
-                    <td className="cell-conversion">{g.total > 0 ? `${Math.round(((g.byStatus['hired'] || 0) + (g.byStatus['joined'] || 0)) / g.total * 100)}%` : '—'}</td>
                   </tr>
                 ))}
               </tbody>

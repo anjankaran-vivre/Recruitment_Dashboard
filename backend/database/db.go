@@ -104,6 +104,101 @@ func RunMigrations() {
 	if err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
+	query = `
+		IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[recruiter_calls]') AND type in (N'U'))
+		BEGIN
+			CREATE TABLE [dbo].[recruiter_calls] (
+				[Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+				[Call_ID] NVARCHAR(255) NOT NULL,
+				[Call_Start_Time] NVARCHAR(255) NULL,
+				[Call_Type] NVARCHAR(100) NULL,
+				[Call_Owner_Email] NVARCHAR(255) NULL,
+				[Call_Owner] NVARCHAR(255) NULL,
+				[Call_Duration] NVARCHAR(50) NULL,
+				[Mobile] NVARCHAR(50) NULL,
+				[CreatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+				[UpdatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+				CONSTRAINT [UQ_recruiter_calls_CallID] UNIQUE ([Call_ID])
+			)
+		END
+	`
+	_, err = DB.Exec(query)
+	if err != nil {
+		log.Fatalf("Failed to create recruiter_calls table: %v", err)
+	}
+
+	newColumns := []string{
+		"TelleCalling_Time", "Tellecalling_Status", "Telecalling_Completed_DateTIme",
+		"Manager_Interview_DateTime", "Manager_Round_Schedule_DateTime", "Manager_Round_Completed_Time",
+	}
+	alterQuery = `
+		IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[application_pipeline]') AND name = 'Call_Duration')
+		BEGIN
+			ALTER TABLE [dbo].[application_pipeline] ADD [Call_Duration] DECIMAL(10,2) NULL DEFAULT 0
+		END
+	`
+	_, err = DB.Exec(alterQuery)
+	if err != nil {
+		log.Fatalf("Failed to add column Call_Duration: %v", err)
+	}
+
+	for _, col := range newColumns {
+		alterQuery := fmt.Sprintf(`
+			IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[application_pipeline]') AND name = '%s')
+			BEGIN
+				ALTER TABLE [dbo].[application_pipeline] ADD [%s] NVARCHAR(MAX) NULL
+			END
+		`, col, col)
+		_, err = DB.Exec(alterQuery)
+		if err != nil {
+			log.Fatalf("Failed to add column %s: %v", col, err)
+		}
+	}
+
+	query = `
+		IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[recruiters]') AND type in (N'U'))
+		BEGIN
+			CREATE TABLE [dbo].[recruiters] (
+				[recruiter_id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+				[recruiter_name] NVARCHAR(255) NOT NULL,
+				[email] NVARCHAR(255) NOT NULL,
+				[User_ID] NVARCHAR(255) NOT NULL,
+				[status] NVARCHAR(50) NOT NULL DEFAULT 'Active',
+				[CreatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+				[UpdatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+				CONSTRAINT [UQ_recruiters_UserID] UNIQUE ([User_ID])
+			)
+		END
+	`
+	_, err = DB.Exec(query)
+	if err != nil {
+		log.Fatalf("Failed to create recruiters table: %v", err)
+	}
+
+	alterQuery = `
+		IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[recruiters]') AND name = 'UQ_recruiters_UserID')
+		BEGIN
+			ALTER TABLE [dbo].[recruiters] ADD CONSTRAINT [UQ_recruiters_UserID] UNIQUE ([User_ID])
+		END
+	`
+	_, err = DB.Exec(alterQuery)
+	if err != nil {
+		log.Printf("Warning: could not add unique constraint to recruiters: %v", err)
+	}
+
+	for _, col := range []string{"CreatedAt", "UpdatedAt"} {
+		alterQuery := fmt.Sprintf(`
+			IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[recruiters]') AND name = '%s')
+			BEGIN
+				ALTER TABLE [dbo].[recruiters] ADD [%s] DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+			END
+		`, col, col)
+		_, err = DB.Exec(alterQuery)
+		if err != nil {
+			log.Fatalf("Failed to add column %s to recruiters: %v", col, err)
+		}
+	}
+
 	fmt.Println("Migrations completed successfully")
 }
 

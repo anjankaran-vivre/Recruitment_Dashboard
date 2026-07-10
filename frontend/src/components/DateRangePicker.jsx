@@ -9,9 +9,13 @@ function fmt(d) {
   return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-export default function DateRangePicker({ dateFrom, dateTo, setDateFrom, setDateTo }) {
+export default function DateRangePicker({ dateFrom, dateTo, setDateFrom, setDateTo, align }) {
   const [show, setShow] = useState(false)
   const [calMonth, setCalMonth] = useState(() => {
+    if (dateFrom) {
+      const d = new Date(dateFrom + 'T00:00:00')
+      return new Date(d.getFullYear(), d.getMonth(), 1)
+    }
     const d = new Date()
     return new Date(d.getFullYear(), d.getMonth(), 1)
   })
@@ -25,6 +29,18 @@ export default function DateRangePicker({ dateFrom, dateTo, setDateFrom, setDate
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  useEffect(() => {
+    if (show) {
+      if (dateFrom) {
+        const d = new Date(dateFrom + 'T00:00:00')
+        setCalMonth(new Date(d.getFullYear(), d.getMonth(), 1))
+      } else {
+        const d = new Date()
+        setCalMonth(new Date(d.getFullYear(), d.getMonth(), 1))
+      }
+    }
+  }, [show, dateFrom])
 
   const handleClick = useCallback(ds => {
     if (!dateFrom || (dateFrom && dateTo)) {
@@ -80,8 +96,8 @@ export default function DateRangePicker({ dateFrom, dateTo, setDateFrom, setDate
       if (isToday) cls += ' cal-today'
       if (isPast && !isFrom && !isTo) cls += ' cal-past'
       cells.push(
-        <div key={d} className={cls} onClick={() => handleClick(ds)}
-          onMouseEnter={() => !dateTo && dateFrom && setHoverDate(dt)}>{d}</div>
+          <div key={d} className={cls} onClick={() => handleClick(ds)}
+               onMouseEnter={() => !dateTo && dateFrom && setHoverDate(dt)}>{d}</div>
       )
     }
     return cells
@@ -99,7 +115,7 @@ export default function DateRangePicker({ dateFrom, dateTo, setDateFrom, setDate
         </button> : null}
         <svg className={`date-pill-arrow${show ? ' open' : ''}`} viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
       </button>
-      <div className={`date-dropdown${show ? ' open' : ''}`}>
+      <div className={`date-dropdown ${align === 'up' ? 'align-up' : ''}${show ? ' open' : ''}`}>
         <div className="date-presets">
           <button className="date-preset-btn" onClick={() => applyPreset(todayStr(), todayStr())}>Today</button>
           <button className="date-preset-btn" onClick={() => applyPreset(yesterdayStr(), yesterdayStr())}>Yesterday</button>

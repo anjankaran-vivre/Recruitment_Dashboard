@@ -36,6 +36,12 @@ func main() {
 		api.GET("/applications", handlers.GetApplications)
 		api.POST("/application", handlers.CreateApplication)
 		api.GET("/summary", handlers.GetSummary)
+		api.POST("/call", handlers.CreateCall)
+		api.POST("/calls", handlers.CreateCall)
+		api.GET("/calls", handlers.GetCalls)
+		api.GET("/metrics", handlers.GetMetrics)
+		api.GET("/recruiters", handlers.GetRecruiters)
+		api.POST("/recruiter", handlers.CreateRecruiter)
 	}
 
 	addr := fmt.Sprintf(":%s", cfg.ServerPort)

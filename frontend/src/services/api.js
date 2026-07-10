@@ -22,3 +22,13 @@ export async function fetchSummary() {
   const res = await fetch(`${BASE_URL}/summary`);
   return handleResponse(res);
 }
+
+export async function fetchActiveRecruiters() {
+  const res = await fetch(`${BASE_URL}/recruiters`);
+  return handleResponse(res);
+}
+
+export async function fetchCalls() {
+  const res = await fetch(`${BASE_URL}/calls`);
+  return handleResponse(res);
+}

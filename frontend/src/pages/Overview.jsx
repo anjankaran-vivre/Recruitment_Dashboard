@@ -1,36 +1,63 @@
-import { useState, useEffect } from 'react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
-import { fetchSummary, fetchRequisitions, fetchApplications } from '../services/api'
+import { useState, useEffect, useRef } from 'react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, Legend } from 'recharts'
+import { useData } from '../context/DataContext'
 
 const COLORS = ['#4f46e5', '#22c55e', '#eab308', '#ef4444', '#3b82f6', '#a855f7']
 
+const MIN_PCT = 8
+const RADIAN = Math.PI / 180
+
+function makePieLabel(sep) {
+  return function PieLabel({ name, percent, cx, cy, midAngle, outerRadius }) {
+    const pct = parseFloat((percent * 100).toFixed(0))
+    if (pct < MIN_PCT) return null
+    const r = outerRadius + 26
+    const x = cx + r * Math.cos(-midAngle * RADIAN)
+    const y = cy + r * Math.sin(-midAngle * RADIAN)
+    const sx = cx + (outerRadius + 8) * Math.cos(-midAngle * RADIAN)
+    const sy = cy + (outerRadius + 8) * Math.sin(-midAngle * RADIAN)
+    return (
+      <g>
+        <polyline points={`${sx},${sy} ${x},${y}`} fill="none" stroke="rgba(0,0,0,0.15)" strokeWidth={1} />
+        <text x={x} y={y} textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" style={{ fontSize: 11, fill: 'var(--text)' }}>
+          {`${name}${sep}${pct}%`}
+        </text>
+      </g>
+    )
+  }
+}
+
 export default function Overview() {
-  const [summary, setSummary] = useState(null)
-  const [requisitions, setRequisitions] = useState([])
-  const [applications, setApplications] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { summary, requisitions, applications, loading } = useData()
+  const [pageReady, setPageReady] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    async function load() {
-      try {
-        const [s, r, a] = await Promise.all([
-          fetchSummary(),
-          fetchRequisitions(),
-          fetchApplications()
-        ])
-        setSummary(s)
-        setRequisitions(r)
-        setApplications(a)
-      } catch (err) {
-        console.error('Failed to load dashboard data:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
+    requestAnimationFrame(() => setPageReady(true))
   }, [])
 
-  if (loading) {
+  const reqRef = useRef(null)
+  const appRef = useRef(null)
+  const deptRef = useRef(null)
+  const [sizes, setSizes] = useState({ req: 0, app: 0, dept: 0 })
+
+  useEffect(() => {
+    if (!loading && !mounted) {
+      const t = setTimeout(() => {
+        if (reqRef.current && appRef.current && deptRef.current) {
+          setSizes({
+            req: reqRef.current.offsetWidth,
+            app: appRef.current.offsetWidth,
+            dept: deptRef.current.offsetWidth
+          })
+          setMounted(true)
+        }
+      }, 80)
+      return () => clearTimeout(t)
+    }
+  }, [loading, mounted])
+
+  if (loading || !pageReady) {
     return (
       <div className="loading">
         <div className="spinner" /> Loading dashboard...
@@ -70,11 +97,11 @@ export default function Overview() {
   }).length
 
   const summaryCards = [
-    { label: 'Total Requisitions', value: summary?.total_requisitions ?? 0, icon: '📋', color: '#4f46e5' },
-    { label: 'Open Positions', value: inProgressCount, icon: '🔓', color: '#22c55e' },
-    { label: 'Total Applications', value: summary?.total_applications ?? 0, icon: '📄', color: '#3b82f6' },
-    { label: 'Avg CV Score', value: summary?.avg_cv_score != null ? `${Math.round(summary.avg_cv_score)}%` : '—', icon: '⭐', color: '#eab308' },
-    { label: 'Avg Call Audit', value: summary?.avg_call_audit_score != null ? `${Math.round(summary.avg_call_audit_score)}%` : '—', icon: '🎯', color: '#f97316' },
+    { label: 'Total Requisitions', value: summary?.total_requisitions ?? 0 },
+    { label: 'Open Positions', value: inProgressCount },
+    { label: 'Total Applications', value: summary?.total_applications ?? 0 },
+    { label: 'Avg CV Score', value: summary?.avg_cv_score != null ? `${Math.round(summary.avg_cv_score)}%` : '—' },
+    { label: 'Avg Call Audit', value: summary?.avg_call_audit_score != null ? `${Math.round(summary.avg_call_audit_score)}%` : '—' },
   ]
 
   return (
@@ -82,12 +109,7 @@ export default function Overview() {
       <div className="summary-cards">
         {summaryCards.map((card, i) => (
           <div className="summary-card" key={i}>
-            <div className="summary-card-label">
-              <span className="summary-card-icon" style={{ background: `${card.color}15`, color: card.color }}>
-                {card.icon}
-              </span>
-              {card.label}
-            </div>
+            <div className="summary-card-label">{card.label}</div>
             <div className="summary-card-value">{card.value}</div>
           </div>
         ))}
@@ -96,52 +118,76 @@ export default function Overview() {
       <div className="charts-grid">
         <div className="chart-card">
           <h3>Requisitions by Status</h3>
-          {requisitionStatusData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie data={requisitionStatusData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+          <div ref={reqRef} style={{ width: '100%', height: 300 }}>
+            {mounted && sizes.req > 0 && requisitionStatusData.length > 0 ? (
+              <PieChart width={sizes.req} height={300}>
+                <Pie data={requisitionStatusData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} startAngle={-90} endAngle={270} dataKey="value" isAnimationActive={true} animationBegin={300} animationDuration={1500} animationEasing="ease-out" labelLine={false} label={makePieLabel(' ')}>
                   {requisitionStatusData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
                 <Tooltip />
               </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="empty-state"><div className="empty-state-text">No data</div></div>
-          )}
+            ) : !mounted ? (
+              <div className="empty-state"><div className="empty-state-text">Loading chart...</div></div>
+            ) : (
+              <div className="empty-state"><div className="empty-state-text">No data</div></div>
+            )}
+          </div>
         </div>
 
         <div className="chart-card">
           <h3>Applications by Status</h3>
-          {appStatusData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={appStatusData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
+          <div ref={appRef} style={{ width: '100%', height: 310 }}>
+            {mounted && sizes.app > 0 && appStatusData.length > 0 ? (
+              <PieChart width={sizes.app} height={310}>
+                <Pie
+                  data={appStatusData}
+                  cx="50%"
+                  cy="52%"
+                  innerRadius={65}
+                  outerRadius={95}
+                  paddingAngle={3}
+                  dataKey="value"
+                  startAngle={-90}
+                  endAngle={270}
+                  isAnimationActive={true}
+                  animationBegin={500}
+                  animationDuration={1500}
+                  animationEasing="ease-out"
+                  labelLine={false}
+                  label={makePieLabel(': ')}
+                >
+                  {appStatusData.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Pie>
                 <Tooltip />
-                <Bar dataKey="value" fill="#4f46e5" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="empty-state"><div className="empty-state-text">No data</div></div>
-          )}
+                <Legend verticalAlign="bottom" iconType="circle" wrapperStyle={{ fontSize: 11 }} />
+              </PieChart>
+            ) : !mounted ? (
+              <div className="empty-state"><div className="empty-state-text">Loading chart...</div></div>
+            ) : (
+              <div className="empty-state"><div className="empty-state-text">No data</div></div>
+            )}
+          </div>
         </div>
 
         <div className="chart-card">
           <h3>Requisitions by Department</h3>
-          {deptData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={deptData} layout="vertical">
+          <div ref={deptRef} style={{ width: '100%', height: 280 }}>
+            {mounted && sizes.dept > 0 && deptData.length > 0 ? (
+              <BarChart data={deptData} layout="vertical" width={sizes.dept} height={280}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis type="number" tick={{ fontSize: 12 }} />
                 <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={120} />
                 <Tooltip />
-                <Bar dataKey="value" fill="#818cf8" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="value" fill="#818cf8" radius={[0, 4, 4, 0]} isAnimationActive={true} animationBegin={700} animationDuration={1200} animationEasing="ease-out" />
               </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="empty-state"><div className="empty-state-text">No data</div></div>
-          )}
+            ) : !mounted ? (
+              <div className="empty-state"><div className="empty-state-text">Loading chart...</div></div>
+            ) : (
+              <div className="empty-state"><div className="empty-state-text">No data</div></div>
+            )}
+          </div>
         </div>
 
         <div className="chart-card">
