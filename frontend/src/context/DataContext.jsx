@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { fetchSummary, fetchRequisitions, fetchApplications, fetchCalls } from '../services/api'
 
 const DataContext = createContext(null)
@@ -9,31 +9,39 @@ export function DataProvider({ children }) {
   const [applications, setApplications] = useState([])
   const [calls, setCalls] = useState([])
   const [loading, setLoading] = useState(true)
+  const intervalRef = useRef(null)
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [s, r, a, c] = await Promise.all([
-          fetchSummary(),
-          fetchRequisitions(),
-          fetchApplications(),
-          fetchCalls()
-        ])
-        setSummary(s)
-        setRequisitions(r)
-        setApplications(a)
-        setCalls(c)
-      } catch (err) {
-        console.error('Failed to load data:', err)
-      } finally {
-        setLoading(false)
-      }
+  const load = useCallback(async (silent) => {
+    if (!silent) setLoading(true)
+    try {
+      const [s, r, a, c] = await Promise.all([
+        fetchSummary(),
+        fetchRequisitions(),
+        fetchApplications(),
+        fetchCalls()
+      ])
+      setSummary(s)
+      setRequisitions(r)
+      setApplications(a)
+      setCalls(c)
+    } catch (err) {
+      console.error('Failed to load data:', err)
+    } finally {
+      if (!silent) setLoading(false)
     }
-    load()
   }, [])
 
+  useEffect(() => {
+    load(false)
+  }, [load])
+
+  useEffect(() => {
+    intervalRef.current = setInterval(() => load(true), 20000)
+    return () => clearInterval(intervalRef.current)
+  }, [load])
+
   return (
-    <DataContext.Provider value={{ summary, requisitions, applications, calls, loading }}>
+    <DataContext.Provider value={{ summary, requisitions, applications, calls, loading, refresh: () => load(true) }}>
       {children}
     </DataContext.Provider>
   )

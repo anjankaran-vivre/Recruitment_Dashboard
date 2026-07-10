@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import DateRangePicker from '../components/DateRangePicker'
 
 function toInputStr(d) {
@@ -14,21 +14,24 @@ export default function Metrics() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    setLoading(true)
+  const fetchMetrics = useCallback(() => {
     const params = new URLSearchParams()
     if (dateFrom) params.set('from', dateFrom)
     if (dateTo) params.set('to', dateTo)
-    fetch(`http://localhost:8080/api/metrics?${params}`)
+    fetch(`/api/metrics?${params}`)
       .then(res => res.json())
       .then(json => {
-        setData(json.data)
+        if (json.data) setData(json.data)
       })
       .catch(err => console.error('Failed to load metrics:', err))
-      .finally(() => setLoading(false))
   }, [dateFrom, dateTo])
+
+  useEffect(() => {
+    fetchMetrics()
+    const id = setInterval(fetchMetrics, 20000)
+    return () => clearInterval(id)
+  }, [fetchMetrics])
 
   if (!data) {
     return (
@@ -76,7 +79,6 @@ export default function Metrics() {
             Showing data from {toLocalStr(dateFrom)} to {toLocalStr(dateTo)}
           </div>
         )}
-        {loading && <div className="loading"><div className="spinner" /></div>}
 
         {/* Recruiter Activity Table */}
         <div className="pipeline-panel" style={{ marginBottom: 24, flex: 'none' }}>
