@@ -44,7 +44,6 @@ function MilestoneBar({ status }) {
     if (isFollowUp && i === 0) classes.push('ms-filled')
     if (isFutureHireable && i <= 1) classes.push('ms-filled')
     if (isFutureHireable && i === MILESTONES.length - 1) classes.push('ms-future-hireable-dot')
-    // Manager Round Scheduled: dots 0+1 filled blue, dot 2 = yellow in-progress
     if (isManagerScheduled && i <= 1) classes.push('ms-filled')
     if (isManagerScheduled && i === 2) classes.push('ms-manager-scheduled')
     return classes.join(' ')
@@ -70,8 +69,6 @@ function MilestoneBar({ status }) {
           {i < MILESTONES.length - 1 && (
             <div className="ms-line-wrap">
               <div className={lineClass(i)} />
-
-
             </div>
           )}
         </div>
@@ -80,13 +77,8 @@ function MilestoneBar({ status }) {
   )
 }
 
-export default function Dashboard() {
-  const { applications, requisitions, loading } = useData()
-  const [pageReady, setPageReady] = useState(false)
-
-  useEffect(() => {
-    requestAnimationFrame(() => setPageReady(true))
-  }, [])
+function DashboardInner() {
+  const { applications, requisitions } = useData()
   const [search, setSearch] = useState('')
   const [candDateFrom, setCandDateFrom] = useState('')
   const [candDateTo, setCandDateTo] = useState('')
@@ -236,8 +228,6 @@ export default function Dashboard() {
     return recruiterSummary.reduce((sum, g) => sum + g.total, 0)
   }, [recruiterSummary])
 
-
-
   const tableJsx = useMemo(() => {
     return candFiltered.length > 0 ? (
       <table className="pipeline-table">
@@ -289,10 +279,6 @@ export default function Dashboard() {
       </div>
     )
   }, [candFiltered])
-
-  if (loading || !pageReady) {
-    return <div className="loading"><div className="spinner" /> Loading dashboard...</div>
-  }
 
   return (
     <div className="pipeline-wrap">
@@ -384,4 +370,117 @@ export default function Dashboard() {
       )}
     </div>
   )
+}
+
+export default function Dashboard() {
+  const { loading } = useData()
+  const [show, setShow] = useState(false)
+
+  useEffect(() => {
+    requestAnimationFrame(() => setShow(true))
+  }, [])
+
+  if (loading) {
+    return <div className="loading"><div className="spinner" /> Loading dashboard...</div>
+  }
+
+  if (!show) {
+    return (
+      <div className="pipeline-wrap">
+        <div className="pipeline-body">
+          <div className="pipeline-panel">
+            <div className="pipeline-panel-head">
+              <div className="pipeline-head-search">
+                <svg className="pipeline-head-search-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input type="text" placeholder="Search..." disabled />
+              </div>
+              <div className="pipeline-panel-head-center">
+                <h3>Candidates</h3>
+              </div>
+            </div>
+            <div className="pipeline-panel-scroll">
+              <table className="pipeline-table">
+                <thead>
+                  <tr>
+                    <th className="th-cand">Candidate</th>
+                    <th className="th-status-timeline">Status / Timeline</th>
+                    <th>Recruiter</th>
+                    <th>CV Link</th>
+                    <th className="th-profile">Profile Summary</th>
+                    <th className="th-posting">Posting Title</th>
+                    <th>Department</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="skel-row">
+                      <td>
+                        <span className="skel-bar-line skel-bar-md" />
+                        <span className="skel-bar-line skel-bar-sm" style={{ opacity: 0.5 }} />
+                      </td>
+                      <td>
+                        <span className="skel-bar skel-bar-sm" />
+                        <div className="skel-ms">
+                          {Array.from({ length: 5 }).map((_, j) => (
+                            <span key={j}>
+                              <span className="skel-ms-dot" />
+                              {j < 4 && <span className="skel-ms-line" />}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td><span className="skel-bar skel-bar-md" /></td>
+                      <td><span className="skel-bar skel-bar-sm" /></td>
+                      <td><span className="skel-bar skel-bar-xl" /></td>
+                      <td><span className="skel-bar skel-bar-lg" /></td>
+                      <td><span className="skel-bar skel-bar-sm" /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="pipeline-panel pipeline-panel-summary">
+            <div className="pipeline-panel-head">
+              <div className="pipeline-panel-head-center">
+                <h3>Recruiter Summary</h3>
+              </div>
+            </div>
+            <div className="pipeline-panel-scroll">
+              <table className="pipeline-table">
+                <thead>
+                  <tr>
+                    <th>Recruiter</th>
+                    <th>CV Sourcing</th>
+                    <th>Follow up</th>
+                    <th>Tellecalling Done</th>
+                    <th>Manager Round Schedule</th>
+                    <th>Offer Accepted</th>
+                    <th>Awaiting Joining</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <tr key={i} className="skel-row">
+                      <td><span className="skel-bar skel-bar-md" /></td>
+                      <td><span className="skel-bar skel-bar-sm" /></td>
+                      <td><span className="skel-bar skel-bar-sm" /></td>
+                      <td><span className="skel-bar skel-bar-sm" /></td>
+                      <td><span className="skel-bar skel-bar-sm" /></td>
+                      <td><span className="skel-bar skel-bar-sm" /></td>
+                      <td><span className="skel-bar skel-bar-sm" /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return <DashboardInner />
 }

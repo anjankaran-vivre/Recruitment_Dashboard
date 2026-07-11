@@ -29,12 +29,7 @@ function makePieLabel(sep) {
 
 export default function Overview() {
   const { summary, requisitions, applications, loading } = useData()
-  const [pageReady, setPageReady] = useState(false)
   const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    requestAnimationFrame(() => setPageReady(true))
-  }, [])
 
   const reqRef = useRef(null)
   const appRef = useRef(null)
@@ -57,7 +52,7 @@ export default function Overview() {
     }
   }, [loading, mounted])
 
-  if (loading || !pageReady) {
+  if (loading) {
     return (
       <div className="loading">
         <div className="spinner" /> Loading dashboard...
