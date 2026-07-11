@@ -7,10 +7,6 @@ import (
 )
 
 func DBConnectionString(cfg *config.Config) string {
-	return fmt.Sprintf(
-		"sqlserver://@%s?instance=%s&database=%s&trusted_connection=yes&TrustServerCertificate=true",
-		cfg.DBHost,
-		cfg.DBInstance,
-		cfg.DBName,
-	)
+	return fmt.Sprintf("server=%s,%s;user id=%s;password=%s;database=%s;trustservercertificate=true",
+		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName)
 }

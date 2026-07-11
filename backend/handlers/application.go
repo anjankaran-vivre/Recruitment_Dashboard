@@ -28,7 +28,11 @@ func CreateApplication(c *gin.Context) {
 		return
 	}
 
-	log.Printf("Processing application: %+v", app.ApplicationID)
+	if app.ApplicationID != nil {
+		log.Printf("Processing application ID: %s", *app.ApplicationID)
+	} else {
+		log.Printf("Processing application with nil ID")
+	}
 
 	query := `MERGE [dbo].[application_pipeline] AS target
 		USING (SELECT @p1 AS Application_ID) AS source
@@ -116,7 +120,11 @@ func CreateApplication(c *gin.Context) {
 		},
 	})
 
-	fmt.Printf("Application saved with ID: %d (Application_ID: %v)\n", newID, app.ApplicationID)
+	if app.ApplicationID != nil {
+		fmt.Printf("Application saved with ID: %d (Application_ID: %s)\n", newID, *app.ApplicationID)
+	} else {
+		fmt.Printf("Application saved with ID: %d\n", newID)
+	}
 }
 
 func GetApplications(c *gin.Context) {

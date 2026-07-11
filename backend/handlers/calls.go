@@ -98,6 +98,37 @@ func CreateCall(c *gin.Context) {
 	fmt.Printf("Call saved with ID: %d (Call_ID: %s)\n", newID, input.CallID)
 }
 
+func SyncCallDurations(c *gin.Context) {
+	query := `
+		UPDATE [dbo].[application_pipeline]
+		SET [Call_Duration] = (
+			SELECT ISNULL(SUM(CAST(ISNULL([Call_Duration], '0') AS DECIMAL(10,2))), 0)
+			FROM [dbo].[recruiter_calls]
+			WHERE [Mobile] = [dbo].[application_pipeline].[Mobile]
+		),
+		[UpdatedAt] = GETUTCDATE()
+		WHERE [Mobile] IS NOT NULL AND [Mobile] != ''`
+
+	result, err := database.DB.DB.Exec(query)
+	if err != nil {
+		log.Printf("Failed to sync call durations: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to sync call durations",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	rows, _ := result.RowsAffected()
+	log.Printf("Synced Call_Duration for %d applications", rows)
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": fmt.Sprintf("Synced Call_Duration for %d applications", rows),
+	})
+}
+
 func GetCalls(c *gin.Context) {
 	query := `SELECT [Id], [Call_ID], [Call_Start_Time], [Call_Type],
 		[Call_Owner_Email], [Call_Owner], [Call_Duration], [Mobile], [CreatedAt]

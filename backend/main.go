@@ -43,6 +43,7 @@ func main() {
 		api.GET("/metrics", handlers.GetMetrics)
 		api.GET("/recruiters", handlers.GetRecruiters)
 		api.POST("/recruiter", handlers.CreateRecruiter)
+		api.POST("/sync-call-durations", handlers.SyncCallDurations)
 	}
 
 	addr := fmt.Sprintf(":%s", cfg.ServerPort)
