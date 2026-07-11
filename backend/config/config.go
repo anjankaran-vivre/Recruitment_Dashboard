@@ -17,7 +17,7 @@ type Config struct {
 }
 
 func Load() *Config {
-	godotenv.Load()
+	godotenv.Load("../.env")
 
 	cfg := &Config{
 		DBHost:     getEnv("DB_HOST", ""),

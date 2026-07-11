@@ -30,7 +30,7 @@ func main() {
 	}))
 	router.SetTrustedProxies(nil)
 
-	api := router.Group("/api")
+	api := router.Group("/recruit_api")
 	{
 		api.GET("/requisitions", handlers.GetRequisitions)
 		api.POST("/requisition", handlers.CreateRequisition)

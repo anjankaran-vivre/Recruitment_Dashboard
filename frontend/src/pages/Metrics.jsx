@@ -10,33 +10,122 @@ function fmtNum(v) {
   return Number(v).toFixed(1)
 }
 
+function MetricsSkeleton() {
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 32px', borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.35)' }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Metrics</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span className="skel-bar skel-bar-md" />
+        </div>
+      </div>
+      <div style={{ padding: '16px 32px 24px 32px' }}>
+        <div className="pipeline-panel" style={{ marginBottom: 24, flex: 'none' }}>
+          <div className="pipeline-panel-head">
+            <span className="pipeline-panel-head-center">Recruiter Activity</span>
+          </div>
+          <div className="pipeline-panel-scroll">
+            <table className="pipeline-table">
+              <thead>
+                <tr>
+                  <th>Recruiter Name</th>
+                  <th style={{ textAlign: 'center' }}>Total Candidates Assigned</th>
+                  <th style={{ textAlign: 'center' }}>Called</th>
+                  <th style={{ textAlign: 'center' }}>Joined</th>
+                  <th style={{ textAlign: 'center' }}>Rejected</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <tr key={i} className="skel-row">
+                    <td><span className="skel-bar skel-bar-md" /></td>
+                    <td><span className="skel-bar skel-bar-sm" /></td>
+                    <td><span className="skel-bar skel-bar-sm" /></td>
+                    <td><span className="skel-bar skel-bar-sm" /></td>
+                    <td><span className="skel-bar skel-bar-sm" /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="pipeline-panel" style={{ flex: 'none' }}>
+          <div className="pipeline-panel-head">
+            <span className="pipeline-panel-head-center">Score Metrics</span>
+          </div>
+          <div className="pipeline-panel-scroll">
+            <table className="pipeline-table">
+              <thead>
+                <tr>
+                  <th>Recruiter Name</th>
+                  <th style={{ textAlign: 'center' }}>Requisition Count</th>
+                  <th style={{ textAlign: 'center' }}>Avg Call Audit Score</th>
+                  <th style={{ textAlign: 'center' }}>Avg CV Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <tr key={i} className="skel-row">
+                    <td><span className="skel-bar skel-bar-md" /></td>
+                    <td><span className="skel-bar skel-bar-sm" /></td>
+                    <td><span className="skel-bar skel-bar-sm" /></td>
+                    <td><span className="skel-bar skel-bar-sm" /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Metrics() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [data, setData] = useState(null)
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    requestAnimationFrame(() => setReady(true))
+  }, [])
 
   const fetchMetrics = useCallback(() => {
     const params = new URLSearchParams()
     if (dateFrom) params.set('from', dateFrom)
     if (dateTo) params.set('to', dateTo)
-    fetch(`${import.meta.env.VITE_API_BASE_URL}/metrics?${params}`)
+    const ctrl = new AbortController()
+    const id = setTimeout(() => ctrl.abort(), 60000)
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/metrics?${params}`, { signal: ctrl.signal })
       .then(res => res.json())
       .then(json => {
         if (json.data) setData(json.data)
       })
       .catch(err => console.error('Failed to load metrics:', err))
+      .finally(() => clearTimeout(id))
   }, [dateFrom, dateTo])
 
   useEffect(() => {
     fetchMetrics()
-    const id = setInterval(fetchMetrics, 20000)
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') fetchMetrics()
+    }, 30000)
     return () => clearInterval(id)
   }, [fetchMetrics])
+
+  if (!ready) {
+    return (
+      <div className="page-body">
+        <MetricsSkeleton />
+      </div>
+    )
+  }
 
   if (!data) {
     return (
       <div className="page-body">
-        <div className="loading"><div className="spinner" /><span>Loading metrics…</span></div>
+        <MetricsSkeleton />
       </div>
     )
   }

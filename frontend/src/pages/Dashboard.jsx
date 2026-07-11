@@ -395,114 +395,138 @@ function DashboardInner() {
   )
 }
 
-export default function Dashboard() {
-  const { loading } = useData()
-  const [show, setShow] = useState(false)
-
-  useEffect(() => {
-    requestAnimationFrame(() => setShow(true))
-  }, [])
-
-  if (loading) {
-    return <div className="loading"><div className="spinner" /> Loading dashboard...</div>
-  }
-
-  if (!show) {
-    return (
-      <div className="pipeline-wrap">
-        <div className="pipeline-body">
-          <div className="pipeline-panel">
-            <div className="pipeline-panel-head">
-              <div className="pipeline-head-search">
-                <svg className="pipeline-head-search-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                </svg>
-                <input type="text" placeholder="Search..." disabled />
-              </div>
-              <div className="pipeline-panel-head-center">
-                <h3>Candidates</h3>
-              </div>
+function DashboardSkeleton() {
+  return (
+    <div className="pipeline-wrap">
+      <div className="pipeline-body">
+        <div className="pipeline-panel">
+          <div className="pipeline-panel-head">
+            <div className="pipeline-head-search">
+              <svg className="pipeline-head-search-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+              <input type="text" placeholder="Search..." disabled />
             </div>
-            <div className="pipeline-panel-scroll">
-              <table className="pipeline-table">
-                <thead>
-                  <tr>
-                    <th className="th-cand">Candidate</th>
-                    <th className="th-status-timeline">Status / Timeline</th>
-                    <th>Recruiter</th>
-                    <th>CV Link</th>
-                    <th className="th-profile">Profile Summary</th>
-                    <th className="th-posting">Posting Title</th>
-                    <th>Department</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="skel-row">
-                      <td>
-                        <span className="skel-bar-line skel-bar-md" />
-                        <span className="skel-bar-line skel-bar-sm" style={{ opacity: 0.5 }} />
-                      </td>
-                      <td>
-                        <span className="skel-bar skel-bar-sm" />
-                        <div className="skel-ms">
-                          {Array.from({ length: 5 }).map((_, j) => (
-                            <span key={j}>
-                              <span className="skel-ms-dot" />
-                              {j < 4 && <span className="skel-ms-line" />}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td><span className="skel-bar skel-bar-md" /></td>
-                      <td><span className="skel-bar skel-bar-sm" /></td>
-                      <td><span className="skel-bar skel-bar-xl" /></td>
-                      <td><span className="skel-bar skel-bar-lg" /></td>
-                      <td><span className="skel-bar skel-bar-sm" /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="pipeline-panel-head-center">
+              <h3>Candidates</h3>
             </div>
           </div>
-          <div className="pipeline-panel pipeline-panel-summary">
-            <div className="pipeline-panel-head">
-              <div className="pipeline-panel-head-center">
-                <h3>Recruiter Summary</h3>
-              </div>
-            </div>
-            <div className="pipeline-panel-scroll">
-              <table className="pipeline-table">
-                <thead>
-                  <tr>
-                    <th>Recruiter</th>
-                    <th style={{ textAlign: 'center' }}>Associated</th>
-                    <th style={{ textAlign: 'center' }}>CV Sourcing</th>
-                    <th style={{ textAlign: 'center' }}>Tellecalling Done</th>
-                    <th style={{ textAlign: 'center' }}>Manager Round Schedule</th>
-                    <th style={{ textAlign: 'center' }}>Offer Accepted</th>
-                    <th style={{ textAlign: 'center' }}>Awaiting Joining</th>
+          <div className="pipeline-panel-scroll">
+            <table className="pipeline-table">
+              <thead>
+                <tr>
+                  <th className="th-cand">Candidate</th>
+                  <th className="th-status-timeline">Status / Timeline</th>
+                  <th>Recruiter</th>
+                  <th>CV Link</th>
+                  <th className="th-profile">Profile Summary</th>
+                  <th className="th-posting">Posting Title</th>
+                  <th>Department</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="skel-row">
+                    <td>
+                      <span className="skel-bar-line skel-bar-md" />
+                      <span className="skel-bar-line skel-bar-sm" style={{ opacity: 0.5 }} />
+                    </td>
+                    <td>
+                      <span className="skel-bar skel-bar-sm" />
+                      <div className="skel-ms">
+                        {Array.from({ length: 5 }).map((_, j) => (
+                          <span key={j}>
+                            <span className="skel-ms-dot" />
+                            {j < 4 && <span className="skel-ms-line" />}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td><span className="skel-bar skel-bar-md" /></td>
+                    <td><span className="skel-bar skel-bar-sm" /></td>
+                    <td><span className="skel-bar skel-bar-xl" /></td>
+                    <td><span className="skel-bar skel-bar-lg" /></td>
+                    <td><span className="skel-bar skel-bar-sm" /></td>
                   </tr>
-                </thead>
-                <tbody>
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <tr key={i} className="skel-row">
-                      <td><span className="skel-bar" style={{ width: 26, height: 26, borderRadius: '50%', display: 'inline-block', verticalAlign: 'middle', marginRight: 8 }} /><span className="skel-bar skel-bar-md" style={{ display: 'inline-block', verticalAlign: 'middle' }} /></td>
-                      <td><span className="skel-bar skel-bar-sm" /></td>
-                      <td><span className="skel-bar skel-bar-sm" /></td>
-                      <td><span className="skel-bar skel-bar-sm" /></td>
-                      <td><span className="skel-bar skel-bar-sm" /></td>
-                      <td><span className="skel-bar skel-bar-sm" /></td>
-                      <td><span className="skel-bar skel-bar-sm" /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="pipeline-panel pipeline-panel-summary">
+          <div className="pipeline-panel-head">
+            <div className="pipeline-panel-head-center">
+              <h3>Recruiter Summary</h3>
             </div>
+          </div>
+          <div className="pipeline-panel-scroll">
+            <table className="pipeline-table">
+              <thead>
+                <tr>
+                  <th>Recruiter</th>
+                  <th style={{ textAlign: 'center' }}>Associated</th>
+                  <th style={{ textAlign: 'center' }}>CV Sourcing</th>
+                  <th style={{ textAlign: 'center' }}>Tellecalling Done</th>
+                  <th style={{ textAlign: 'center' }}>Manager Round Schedule</th>
+                  <th style={{ textAlign: 'center' }}>Offer Accepted</th>
+                  <th style={{ textAlign: 'center' }}>Awaiting Joining</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <tr key={i} className="skel-row">
+                    <td><span className="skel-bar" style={{ width: 26, height: 26, borderRadius: '50%', display: 'inline-block', verticalAlign: 'middle', marginRight: 8 }} /><span className="skel-bar skel-bar-md" style={{ display: 'inline-block', verticalAlign: 'middle' }} /></td>
+                    <td><span className="skel-bar skel-bar-sm" /></td>
+                    <td><span className="skel-bar skel-bar-sm" /></td>
+                    <td><span className="skel-bar skel-bar-sm" /></td>
+                    <td><span className="skel-bar skel-bar-sm" /></td>
+                    <td><span className="skel-bar skel-bar-sm" /></td>
+                    <td><span className="skel-bar skel-bar-sm" /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+export default function Dashboard() {
+  const { loading, error, refresh } = useData()
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    requestAnimationFrame(() => setReady(true))
+  }, [])
+
+  if (loading) {
+    return <DashboardSkeleton />
+  }
+
+  if (error) {
+    return (
+      <div className="loading">
+        <div style={{ textAlign: 'center', maxWidth: 400 }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>⚠️</div>
+          <p style={{ color: 'var(--text-light)', marginBottom: 16 }}>{error}</p>
+          <button
+            onClick={() => refresh()}
+            style={{
+              padding: '10px 24px', borderRadius: 8, border: 'none',
+              background: 'var(--primary)', color: '#fff', cursor: 'pointer'
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
     )
+  }
+
+  if (!ready) {
+    return <DashboardSkeleton />
   }
 
   return <DashboardInner />
