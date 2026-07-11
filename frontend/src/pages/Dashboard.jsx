@@ -124,7 +124,7 @@ function DashboardInner() {
     return applications
       .filter(a => {
         const d = a.Application_Created_Time || a.CreatedAt
-        return d && new Date(d).getFullYear() === 2026
+        return d && d.slice(0, 4) === '2026'
       })
       .map(a => {
         let dept = null
@@ -171,19 +171,13 @@ function DashboardInner() {
 
   const candFiltered = useMemo(() => {
     let list = searched
-    if (candDateFrom) {
-      const from = new Date(candDateFrom)
+    if (candDateFrom || candDateTo) {
       list = list.filter(a => {
-        const d = a.Application_Created_Time || a.CreatedAt
-        return d && new Date(d) >= from
-      })
-    }
-    if (candDateTo) {
-      const to = new Date(candDateTo)
-      to.setHours(23, 59, 59, 999)
-      list = list.filter(a => {
-        const d = a.Application_Created_Time || a.CreatedAt
-        return d && new Date(d) <= to
+        const d = (a.Application_Created_Time || a.CreatedAt || '').slice(0, 10)
+        if (!d) return false
+        if (candDateFrom && d < candDateFrom) return false
+        if (candDateTo && d > candDateTo) return false
+        return true
       })
     }
     return list
