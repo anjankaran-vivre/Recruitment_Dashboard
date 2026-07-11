@@ -1,8 +1,9 @@
 module.exports = {
   apps: [
     {
-      name: "Recuiter-Dashboard-Backend-8080",
+      name: "Recuiter-Backend-8080",
       script: "backend/build/recruit_backend.exe",
+      cwd: "backend",
       env: { PORT: 8080 }
     },
     {
