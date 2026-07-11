@@ -77,6 +77,12 @@ function MilestoneBar({ status }) {
   )
 }
 
+function getInitials(name) {
+  const parts = name.split(' ')
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  return name.slice(0, 2).toUpperCase()
+}
+
 function DashboardInner() {
   const { applications, requisitions } = useData()
   const [search, setSearch] = useState('')
@@ -275,7 +281,7 @@ function DashboardInner() {
                 </span>
                 <MilestoneBar status={a.Application_Status} />
               </td>
-              <td className="cell-recruiter">{a.Recruiter_Name || '—'}</td>
+              <td className="cell-recruiter">{a.Recruiter_Name ? <><span className="recruiter-avatar">{getInitials(a.Recruiter_Name)}</span> <span>{a.Recruiter_Name}</span></> : '—'}</td>
               <td>
                 {a.CV_Link ? (
                   <a href={a.CV_Link} target="_blank" rel="noopener noreferrer" className="cv-link">View CV</a>
@@ -348,32 +354,29 @@ function DashboardInner() {
             <table className="pipeline-table">
               <thead>
                   <tr>
-                    <th>Recruiter</th>
-                    <th>Associated</th>
-                    <th>CV Sourcing</th>
-                    <th>Tellecalling Done</th>
-                    <th>Manager Round Schedule</th>
-                    <th>Offer Accepted</th>
-                    <th>Awaiting Joining</th>
+                    <th>Recruiter ({recruiterSummary.length})</th>
+                    <th style={{ textAlign: 'center' }}>Associated</th>
+                    <th style={{ textAlign: 'center' }}>CV Sourcing</th>
+                    <th style={{ textAlign: 'center' }}>Tellecalling Done</th>
+                    <th style={{ textAlign: 'center' }}>Manager Round Schedule</th>
+                    <th style={{ textAlign: 'center' }}>Offer Accepted</th>
+                    <th style={{ textAlign: 'center' }}>Awaiting Joining</th>
                   </tr>
               </thead>
               <tbody>
                 {recruiterSummary.map((g, i) => (
                   <tr key={i}>
-                    <td className="cell-recruiter">{g.recruiter}</td>
-                    <td className="cell-total">{g.associatedCount}</td>
-                    <td className="cell-total">{g.cvSourcingCount}</td>
-                    <td className="cell-total">{g.tellecallingDoneCount}</td>
-                    <td className="cell-total">{g.mgrScheduleCount}</td>
-                    <td className="cell-total">{g.offerAcceptedCount}</td>
-                    <td className="cell-total">{g.awaitingJoiningCount}</td>
+                    <td className="cell-recruiter"><span className="recruiter-avatar">{getInitials(g.recruiter)}</span> <span>{g.recruiter}</span></td>
+                    <td style={{ textAlign: 'center' }}>{g.associatedCount}</td>
+                    <td style={{ textAlign: 'center' }}>{g.cvSourcingCount}</td>
+                    <td style={{ textAlign: 'center' }}>{g.tellecallingDoneCount}</td>
+                    <td style={{ textAlign: 'center' }}>{g.mgrScheduleCount}</td>
+                    <td style={{ textAlign: 'center' }}>{g.offerAcceptedCount}</td>
+                    <td style={{ textAlign: 'center' }}>{g.awaitingJoiningCount}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-          <div className="pipeline-panel-foot">
-            {recruiterSummary.length} recruiter{recruiterSummary.length !== 1 ? 's' : ''}
           </div>
         </div>
       </div>
@@ -473,18 +476,18 @@ export default function Dashboard() {
                 <thead>
                   <tr>
                     <th>Recruiter</th>
-                    <th>Associated</th>
-                    <th>CV Sourcing</th>
-                    <th>Tellecalling Done</th>
-                    <th>Manager Round Schedule</th>
-                    <th>Offer Accepted</th>
-                    <th>Awaiting Joining</th>
+                    <th style={{ textAlign: 'center' }}>Associated</th>
+                    <th style={{ textAlign: 'center' }}>CV Sourcing</th>
+                    <th style={{ textAlign: 'center' }}>Tellecalling Done</th>
+                    <th style={{ textAlign: 'center' }}>Manager Round Schedule</th>
+                    <th style={{ textAlign: 'center' }}>Offer Accepted</th>
+                    <th style={{ textAlign: 'center' }}>Awaiting Joining</th>
                   </tr>
                 </thead>
                 <tbody>
                   {Array.from({ length: 4 }).map((_, i) => (
                     <tr key={i} className="skel-row">
-                      <td><span className="skel-bar skel-bar-md" /></td>
+                      <td><span className="skel-bar" style={{ width: 26, height: 26, borderRadius: '50%', display: 'inline-block', verticalAlign: 'middle', marginRight: 8 }} /><span className="skel-bar skel-bar-md" style={{ display: 'inline-block', verticalAlign: 'middle' }} /></td>
                       <td><span className="skel-bar skel-bar-sm" /></td>
                       <td><span className="skel-bar skel-bar-sm" /></td>
                       <td><span className="skel-bar skel-bar-sm" /></td>
