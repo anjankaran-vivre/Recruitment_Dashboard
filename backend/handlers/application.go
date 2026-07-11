@@ -51,7 +51,7 @@ func CreateApplication(c *gin.Context) {
 				[Tellecalling_Feedback] = @p15,
 				[TelleCalling_Time] = @p16,
 				[Tellecalling_Status] = @p17,
-				[Telecalling_Completed_DateTIme] = @p18,
+				[Offer_Accepted_DateTime] = @p18,
 				[Manager_Interview_DateTime] = @p19,
 				[Manager_Round_Schedule_DateTime] = @p20,
 				[Manager_Round_Completed_Time] = @p21,
@@ -61,7 +61,7 @@ func CreateApplication(c *gin.Context) {
 				[Call_Audit_Score], [Call_Priority], [Candidate_Name], [CV_Link],
 				[CV_Score], [Job_Opening_ID], [Mobile], [Posting_Title], [Recruiter_Name],
 				[Source], [Profile_Summary], [Tellecalling_Feedback],
-				[TelleCalling_Time], [Tellecalling_Status], [Telecalling_Completed_DateTIme],
+				[TelleCalling_Time], [Tellecalling_Status], [Offer_Accepted_DateTime],
 				[Manager_Interview_DateTime], [Manager_Round_Schedule_DateTime], [Manager_Round_Completed_Time])
 			VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15,
 				@p16, @p17, @p18, @p19, @p20, @p21)
@@ -91,7 +91,7 @@ func CreateApplication(c *gin.Context) {
 		app.TellecallingFeedback,
 		app.TelleCallingTime,
 		app.TellecallingStatus,
-		app.TelecallingCompletedDateTime,
+		app.OfferAcceptedDateTime,
 		app.ManagerInterviewDateTime,
 		app.ManagerRoundScheduleDateTime,
 		app.ManagerRoundCompletedTime,
@@ -124,7 +124,7 @@ func GetApplications(c *gin.Context) {
 		[Call_Audit_Score], [Call_Priority], [Candidate_Name], [CV_Link],
 		[CV_Score], [Job_Opening_ID], [Mobile], [Posting_Title], [Recruiter_Name],
 		[Source], [Profile_Summary], [Tellecalling_Feedback],
-		[TelleCalling_Time], [Tellecalling_Status], [Telecalling_Completed_DateTIme],
+		[TelleCalling_Time], [Tellecalling_Status], [Offer_Accepted_DateTime],
 		[Manager_Interview_DateTime], [Manager_Round_Schedule_DateTime], [Manager_Round_Completed_Time],
 		[Call_Duration], [CreatedAt], [UpdatedAt]
 		FROM [dbo].[application_pipeline] ORDER BY [Application_Created_Time] DESC`

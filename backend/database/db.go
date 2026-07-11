@@ -128,7 +128,7 @@ func RunMigrations() {
 	}
 
 	newColumns := []string{
-		"TelleCalling_Time", "Tellecalling_Status", "Telecalling_Completed_DateTIme",
+		"TelleCalling_Time", "Tellecalling_Status", "Offer_Accepted_DateTime",
 		"Manager_Interview_DateTime", "Manager_Round_Schedule_DateTime", "Manager_Round_Completed_Time",
 	}
 	alterQuery = `

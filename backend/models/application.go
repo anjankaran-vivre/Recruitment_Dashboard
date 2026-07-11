@@ -21,7 +21,7 @@ type Application struct {
 	TellecallingFeedback        *string `json:"Tellecalling_Feedback" db:"Tellecalling_Feedback"`
 	TelleCallingTime            *string `json:"TelleCalling_Time" db:"TelleCalling_Time"`
 	TellecallingStatus          *string `json:"Tellecalling_Status" db:"Tellecalling_Status"`
-	TelecallingCompletedDateTime *string `json:"Telecalling_Completed_DateTIme" db:"Telecalling_Completed_DateTIme"`
+	OfferAcceptedDateTime        *string `json:"Offer_Accepted_DateTime" db:"Offer_Accepted_DateTime"`
 	ManagerInterviewDateTime    *string `json:"Manager_Interview_DateTime" db:"Manager_Interview_DateTime"`
 	ManagerRoundScheduleDateTime *string `json:"Manager_Round_Schedule_DateTime" db:"Manager_Round_Schedule_DateTime"`
 	ManagerRoundCompletedTime   *string  `json:"Manager_Round_Completed_Time" db:"Manager_Round_Completed_Time"`

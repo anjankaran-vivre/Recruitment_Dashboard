@@ -183,49 +183,69 @@ function DashboardInner() {
     return list
   }, [searched, candDateFrom, candDateTo])
 
-  const summFiltered = useMemo(() => {
-    let list = enriched
-    if (summDateFrom) {
-      const from = new Date(summDateFrom)
-      list = list.filter(a => {
-        const d = a.Application_Created_Time || a.CreatedAt
-        return d && new Date(d) >= from
-      })
-    }
-    if (summDateTo) {
-      const to = new Date(summDateTo)
-      to.setHours(23, 59, 59, 999)
-      list = list.filter(a => {
-        const d = a.Application_Created_Time || a.CreatedAt
-        return d && new Date(d) <= to
-      })
-    }
-    return list
-  }, [enriched, summDateFrom, summDateTo])
-
-  const allStatuses = useMemo(() => {
-    return [...new Set(enriched.map(a => a.Application_Status).filter(Boolean))]
-      .filter(s => {
-        const low = s.toLowerCase()
-        return !low.includes('rejected') && !low.includes('hirable') && !['approved', 'future hireable', 'pending approval', 'first round completed', 'follow up', '1st round', 'first round', 'on hold', 'associated', 'loi sent', "didn't turn", 'offer declined', 'qualified'].includes(low) && !low.includes('directorial')
-      })
-  }, [enriched])
-
   const recruiterSummary = useMemo(() => {
     const groups = {}
-    for (const a of summFiltered) {
+    const hasFilter = summDateFrom || summDateTo
+
+    for (const a of enriched) {
       const name = a.Recruiter_Name || 'Unassigned'
-      if (!groups[name]) groups[name] = { recruiter: name, total: 0, byStatus: {} }
-      groups[name].total++
-      const status = (a.Application_Status || 'New').toLowerCase()
-      groups[name].byStatus[status] = (groups[name].byStatus[status] || 0) + 1
+      if (!groups[name]) {
+        groups[name] = {
+          recruiter: name,
+          associatedCount: 0,
+          cvSourcingCount: 0,
+          tellecallingDoneCount: 0,
+          mgrScheduleCount: 0,
+          offerAcceptedCount: 0,
+          awaitingJoiningCount: 0,
+        }
+      }
+      const g = groups[name]
+      const createdDate = (a.Application_Created_Time || a.CreatedAt || '').slice(0, 10)
+      const src = (a.Source || '').toLowerCase()
+
+      // Associated: count all applications by created date
+      if (createdDate && (!hasFilter || (createdDate >= summDateFrom && createdDate <= summDateTo))) {
+        g.associatedCount++
+      }
+
+      // CV Sourcing: exclude "Shubham sir" in source
+      if (!src.includes('shubham sir') && createdDate && (!hasFilter || (createdDate >= summDateFrom && createdDate <= summDateTo))) {
+        g.cvSourcingCount++
+      }
+
+      // Tellecalling Done: by TelleCalling_Time date
+      const tcDate = (a.TelleCalling_Time || '').slice(0, 10)
+      if (tcDate && (!hasFilter || (tcDate >= summDateFrom && tcDate <= summDateTo))) {
+        g.tellecallingDoneCount++
+      }
+
+      // Manager Round Schedule: by Manager_Round_Schedule_DateTime date
+      const mgrDate = (a.Manager_Round_Schedule_DateTime || '').slice(0, 10)
+      if (mgrDate && (!hasFilter || (mgrDate >= summDateFrom && mgrDate <= summDateTo))) {
+        g.mgrScheduleCount++
+      }
+
+      // Offer Accepted: by Offer_Accepted_DateTime date
+      const oaDate = (a.Offer_Accepted_DateTime || '').slice(0, 10)
+      if (oaDate && (!hasFilter || (oaDate >= summDateFrom && oaDate <= summDateTo))) {
+        g.offerAcceptedCount++
+      }
+
+      // Awaiting Joining: status hired only (not yet joined), no date filter
+      const status = (a.Application_Status || '').toLowerCase()
+      if (status === 'hired') {
+        g.awaitingJoiningCount++
+      }
     }
-    return Object.values(groups).sort((a, b) => b.total - a.total)
+
+    return Object.values(groups)
+      .sort((a, b) => b.associatedCount - a.associatedCount)
       .filter(g => activeRecruiters.some(r => r.recruiter_name === g.recruiter))
-  }, [summFiltered, activeRecruiters])
+  }, [enriched, summDateFrom, summDateTo, activeRecruiters])
 
   const grandTotal = useMemo(() => {
-    return recruiterSummary.reduce((sum, g) => sum + g.total, 0)
+    return recruiterSummary.reduce((sum, g) => sum + g.associatedCount, 0)
   }, [recruiterSummary])
 
   const tableJsx = useMemo(() => {
@@ -329,8 +349,8 @@ function DashboardInner() {
               <thead>
                   <tr>
                     <th>Recruiter</th>
+                    <th>Associated</th>
                     <th>CV Sourcing</th>
-                    <th>Follow up</th>
                     <th>Tellecalling Done</th>
                     <th>Manager Round Schedule</th>
                     <th>Offer Accepted</th>
@@ -341,12 +361,12 @@ function DashboardInner() {
                 {recruiterSummary.map((g, i) => (
                   <tr key={i}>
                     <td className="cell-recruiter">{g.recruiter}</td>
-                    <td className="cell-total">{g.total}</td>
-                    <td className={`cell-status-count${(g.byStatus['follow up'] || 0) > 0 ? ' has-count' : ''}`}>{g.byStatus['follow up'] || 0}</td>
-                    <td className={`cell-status-count${(g.byStatus['tele calling screening completed'] || 0) > 0 ? ' has-count' : ''}`}>{g.byStatus['tele calling screening completed'] || 0}</td>
-                    <td className={`cell-status-count${(g.byStatus['manager round scheduled'] || 0) > 0 ? ' has-count' : ''}`}>{g.byStatus['manager round scheduled'] || 0}</td>
-                    <td className={`cell-status-count${(g.byStatus['offer accepted'] || 0) > 0 ? ' has-count' : ''}`}>{g.byStatus['offer accepted'] || 0}</td>
-                    <td className={`cell-status-count${(g.byStatus['hired'] || 0) > 0 ? ' has-count' : ''}`}>{g.byStatus['hired'] || 0}</td>
+                    <td className="cell-total">{g.associatedCount}</td>
+                    <td className="cell-total">{g.cvSourcingCount}</td>
+                    <td className="cell-total">{g.tellecallingDoneCount}</td>
+                    <td className="cell-total">{g.mgrScheduleCount}</td>
+                    <td className="cell-total">{g.offerAcceptedCount}</td>
+                    <td className="cell-total">{g.awaitingJoiningCount}</td>
                   </tr>
                 ))}
               </tbody>
@@ -453,8 +473,8 @@ export default function Dashboard() {
                 <thead>
                   <tr>
                     <th>Recruiter</th>
+                    <th>Associated</th>
                     <th>CV Sourcing</th>
-                    <th>Follow up</th>
                     <th>Tellecalling Done</th>
                     <th>Manager Round Schedule</th>
                     <th>Offer Accepted</th>
