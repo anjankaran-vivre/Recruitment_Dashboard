@@ -19,7 +19,7 @@ export default function Metrics() {
     const params = new URLSearchParams()
     if (dateFrom) params.set('from', dateFrom)
     if (dateTo) params.set('to', dateTo)
-    fetch(`/api/metrics?${params}`)
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/metrics?${params}`)
       .then(res => res.json())
       .then(json => {
         if (json.data) setData(json.data)
